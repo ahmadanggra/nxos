@@ -1,0 +1,24 @@
+---
+- name: Playbook provisioning vlans 
+  hosts: leaf
+  connection: local
+  gather_facts: false
+  vars: 
+    state: deleted
+  tasks:
+  - name: Read CSV file
+    community.general.read_csv:
+        path: "{{ playbook_dir }}/src/vlan.csv"
+        fieldnames: vlan_name,vlan_id
+        delimiter: ","
+    register: vlans
+  - name: configure vlans on switches
+    cisco.nxos.nxos_vlans:
+        config:
+            - vlan_id: "{{ item.vlan_id }}"
+              name: "{{ item.vlan_name }}"
+        state: "{{ state }}"
+    loop: "{{ vlans.list[1:] }}"
+  - name: save run config to startup config
+    cisco.nxos.nxos_config:
+        save_when: always

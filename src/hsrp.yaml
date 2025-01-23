@@ -1,0 +1,14 @@
+---
+feature:
+- interface-vlan
+- hsrp
+hsrp:
+    version: 2
+    group: 10
+    vip: 10.0.0.1
+    interface: vlan10
+    preempt: enabled
+    auth_type: md5
+    auth_string: 7 1234
+    state: present
+

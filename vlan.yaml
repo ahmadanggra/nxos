@@ -1,0 +1,25 @@
+---
+- name: Playbook provisioning vlans 
+  hosts: leaf
+  connection: local
+  gather_facts: false
+  vars: 
+    state: merged
+    vlans:
+    - name: floor_1
+      id: 10
+    - name: floor_2
+      id: 20
+    - name: floor_3
+      id: 30
+  tasks:
+  - name: configure vlans on switches
+    cisco.nxos.nxos_vlans:
+        config:
+            - vlan_id: "{{ item.id }}"
+              name: "{{ item.name }}"
+        state: "{{ state }}"
+    loop: "{{ vlans }}"
+  - name: save run config to startup config
+    cisco.nxos.nxos_config:
+        save_when: always

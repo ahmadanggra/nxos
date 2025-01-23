@@ -1,0 +1,67 @@
+---
+- name: Playbook provisioning vlans 
+  hosts: leaf
+  connection: local
+  gather_facts: false
+  vars: 
+    state: merged
+  vars_files:
+  - "{{ playbook_dir }}/src/hsrp.yaml"
+  tasks:
+  - name: enable feature
+    cisco.nxos.nxos_feature:
+        feature: "{{ item }}"
+        state: enabled
+    loop: "{{ feature }}"
+  - name: configure interface facing lan-sw
+    cisco.nxos.nxos_l2_interfaces:
+        config:
+            - name: ethernet1/1
+              mode: trunk
+              trunk:
+                allowed_vlans: 10,20,30
+        state: "{{ state }}"
+  - name: configure interface vlan10 on both nxos1 and nxos2
+    cisco.nxos.nxos_interfaces:
+        config:
+            - name: vlan10
+              enabled: true
+  - name: configure interface vlan10 on nxos1
+    cisco.nxos.nxos_config:
+        lines:
+            - ip address 10.0.0.101/24
+        parents: interface vlan10
+    when: inventory_hostname == "nxos1"
+  - name: configure interface vlan10 on nxos2
+    cisco.nxos.nxos_config:
+        lines:
+            - ip address 10.0.0.102/24
+        parents: interface vlan10
+    when: inventory_hostname == "nxos2"
+  - name: configure hsrp on nxos1
+    cisco.nxos.nxos_hsrp:
+        group: "{{ hsrp.group }}"
+        version: "{{ hsrp.version }}"
+        vip: "{{ hsrp.vip }}"
+        priority: 150
+        interface: "{{ hsrp.interface }}"
+        preempt: "{{ hsrp.preempt }}"
+        auth_type: "{{ hsrp.auth_type }}"
+        auth_string: "{{ hsrp.auth_string }}"
+        state: "{{ hsrp.state }}"
+    when: inventory_hostname == "nxos1"
+  - name: configure hsrp on nxos2
+    cisco.nxos.nxos_hsrp:
+        group: "{{ hsrp.group }}"
+        version: "{{ hsrp.version }}"
+        vip: "{{ hsrp.vip }}"
+        priority: 100
+        interface: "{{ hsrp.interface }}"
+        preempt: "{{ hsrp.preempt }}"
+        auth_type: "{{ hsrp.auth_type }}"
+        auth_string: "{{ hsrp.auth_string }}"
+        state: "{{ hsrp.state }}"
+    when: inventory_hostname == "nxos2"
+  - name: save run config to startup config
+    cisco.nxos.nxos_config:
+        save_when: always

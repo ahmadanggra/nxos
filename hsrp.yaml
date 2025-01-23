@@ -1,5 +1,5 @@
 ---
-- name: Playbook provisioning vlans 
+- name: Playbook provisioning hsrp
   hosts: leaf
   connection: local
   gather_facts: false
